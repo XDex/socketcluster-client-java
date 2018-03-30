@@ -1,3 +1,5 @@
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFrame;
 import io.github.sac.*;
@@ -58,25 +60,25 @@ public class Main {
                 socket.emit("chat","Hi");
         socket.emit("chat", "Hi", new Ack() {
             @Override
-            public void call(String eventName, Object error, Object data) {
+            public void call(String eventName, JsonNode error, JsonNode data) {
                 System.out.println("Got message for :"+eventName+" error is :"+error+" data is :"+data);
             }
         });
 
         socket.on("yell", new Emitter.Listener() {
             @Override
-            public void call(String eventName, Object data) {
+            public void call(String eventName, JsonNode data) {
                 System.out.println("Got message for :"+eventName+" data is :"+data);
             }
         });
 
         socket.on("yell", new Emitter.AckListener() {
             @Override
-            public void call(String eventName, Object data, Ack ack) {
+            public void call(String eventName, JsonNode data, Ack ack) {
                 System.out.println("Got message for :"+eventName+" data is :"+data);
                 //sending ack back
 
-                ack.call(eventName,"This is error","This is data");
+                ack.call(eventName, new TextNode("This is error"), new TextNode("This is data"));
             }
         });
 //
@@ -85,7 +87,7 @@ public class Main {
 //
         channel.subscribe(new Ack() {
             @Override
-            public void call(String channelName, Object error, Object data) {
+            public void call(String channelName, JsonNode error, JsonNode data) {
                 if (error==null){
                     System.out.println("Subscribed to channel "+channelName+" successfully");
                 }
@@ -94,7 +96,7 @@ public class Main {
 
         channel.publish("Hi sachin", new Ack() {
             @Override
-            public void call(String channelName, Object error, Object data) {
+            public void call(String channelName, JsonNode error, JsonNode data) {
                 if (error==null){
                     System.out.println("Published message to channel "+channelName+" successfully");
                 }
@@ -103,7 +105,7 @@ public class Main {
 
         channel.onMessage(new Emitter.Listener() {
             @Override
-            public void call(String channelName, Object data) {
+            public void call(String channelName, JsonNode data) {
 
                 System.out.println("Got message for channel "+channelName+" data is "+data);
             }
@@ -111,7 +113,7 @@ public class Main {
 
         channel.unsubscribe(new Ack() {
             @Override
-            public void call(String name, Object error, Object data) {
+            public void call(String name, JsonNode error, JsonNode data) {
                 System.out.println("Unsubscribed successfully");
             }
         });
