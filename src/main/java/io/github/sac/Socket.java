@@ -1,9 +1,12 @@
 package io.github.sac;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.neovisionaries.ws.client.*;
+import io.github.sac.codec.CodecEngine;
 
 import java.io.IOException;
 import java.util.*;
@@ -30,6 +33,7 @@ public class Socket extends Emitter {
     private List<Channel> channels;
     private WebSocketAdapter adapter;
     private Map<String, String> headers;
+    private CodecEngine codec;
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -81,6 +85,10 @@ public class Socket extends Emitter {
         this.listener = listener;
     }
 
+    public void setCodec(CodecEngine codec) {
+        this.codec = codec;
+    }
+
     /**
      * used to set up TLS/SSL connection to server for more details visit neovisionaries websocket client
      */
@@ -93,11 +101,27 @@ public class Socket extends Emitter {
         AuthToken = token;
     }
 
+    private void send(WebSocket webSocket, String data) {
+        send(webSocket, new TextNode(data));
+    }
+
+    private void send(JsonNode data) {
+        send(ws, data);
+    }
+
+    private void send(WebSocket webSocket, JsonNode data) {
+        if (codec == null) {
+            webSocket.sendText(data.toString());
+        } else {
+            webSocket.sendBinary(codec.encode(data));
+        }
+    }
+
     public WebSocketAdapter getAdapter() {
         return new WebSocketAdapter() {
 
             @Override
-            public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
+            public void onConnected(WebSocket websocket, Map<String, List<String>> headers) {
 
                 /**
                  * Code for sending handshake
@@ -116,7 +140,8 @@ public class Socket extends Emitter {
 
                 handshakeObject.set("data", object);
                 handshakeObject.put("cid", counter.getAndIncrement());
-                websocket.sendText(handshakeObject.toString());
+
+                send(websocket, handshakeObject);
 
                 listener.onConnected(Socket.this, headers);
             }
@@ -136,25 +161,25 @@ public class Socket extends Emitter {
 
             @Override
             public void onFrame(WebSocket websocket, WebSocketFrame frame) throws Exception {
-                if (frame.isTextFrame() && frame.getPayloadText().equalsIgnoreCase("#1")) {
-                    /**
-                     *  PING-PONG logic goes here
-                     */
-                    websocket.sendText("#2");
+                JsonNode payload;
+
+                if (codec == null) {
+                    payload = getTextPayload(frame.getPayloadText());
+                } else {
+                    payload = codec.decode(frame.getPayload());
+                }
+
+                if (payload.isTextual() && payload.asText().equalsIgnoreCase("#1")) {
+                    send(websocket, "#2"); // PONG
                     return;
                 }
 
-                JsonNode object = mapper.readTree(frame.getPayloadText());
+                LOGGER.info("Message: " + payload.toString());
 
-                /**
-                 * Message retrieval mechanism goes here
-                 */
-                LOGGER.info("Message :" + object.toString());
-
-                JsonNode dataobject = object.get("data");
-                Integer rid = object.get("rid").asInt();
-                Integer cid = object.get("cid").asInt();
-                String event = object.get("event").asText();
+                JsonNode dataobject = payload.get("data");
+                Integer rid = payload.get("rid").asInt();
+                Integer cid = payload.get("cid").asInt();
+                String event = payload.get("event").asText();
 
                 switch (Parser.parse(dataobject, event)) {
                     case ISAUTHENTICATED:
@@ -185,13 +210,21 @@ public class Socket extends Emitter {
                             if (objects != null) {
                                 Ack fn = (Ack) objects[1];
                                 if (fn != null) {
-                                    fn.call((String) objects[0], object.get("error"), dataobject);
+                                    fn.call((String) objects[0], payload.get("error"), dataobject);
                                 } else {
                                     LOGGER.info("ack function is null with rid " + rid);
                                 }
                             }
                         }
                         break;
+                }
+            }
+
+            private JsonNode getTextPayload(String payloadText) throws IOException {
+                try {
+                    return mapper.readTree(payloadText);
+                } catch (JsonParseException e) {
+                    return mapper.valueToTree(payloadText);
                 }
             }
 
@@ -215,7 +248,7 @@ public class Socket extends Emitter {
                 ObjectNode eventObject = mapper.createObjectNode();
                 eventObject.put("event", event);
                 eventObject.putPOJO("data", object);
-                ws.sendText(eventObject.toString());
+                send(eventObject);
             }
         });
         return this;
@@ -229,7 +262,7 @@ public class Socket extends Emitter {
                 eventObject.put("event", event);
                 eventObject.putPOJO("data", object);
                 eventObject.put("cid", counter.getAndIncrement());
-                ws.sendText(eventObject.toString());
+                send(eventObject);
             }
         });
         return this;
@@ -243,7 +276,7 @@ public class Socket extends Emitter {
                 subscribeObject.set("data", mapper.createObjectNode().put("channel", channel));
 
                 subscribeObject.put("cid", counter.getAndIncrement());
-                ws.sendText(subscribeObject.toString());
+                send(subscribeObject);
             }
         });
         return this;
@@ -262,7 +295,7 @@ public class Socket extends Emitter {
                 acks.put(counter.longValue(), getAckObject(channel, ack));
                 subscribeObject.set("data", mapper.createObjectNode().put("channel", channel));
                 subscribeObject.put("cid", counter.getAndIncrement());
-                ws.sendText(subscribeObject.toString());
+                send(subscribeObject);
             }
         });
         return this;
@@ -275,7 +308,7 @@ public class Socket extends Emitter {
                 subscribeObject.put("event", "#unsubscribe");
                 subscribeObject.put("data", channel);
                 subscribeObject.put("cid", counter.getAndIncrement());
-                ws.sendText(subscribeObject.toString());
+                send(subscribeObject);
             }
         });
         return this;
@@ -290,7 +323,7 @@ public class Socket extends Emitter {
 
                 acks.put(counter.longValue(), getAckObject(channel, ack));
                 subscribeObject.put("cid", counter.getAndIncrement());
-                ws.sendText(subscribeObject.toString());
+                send(subscribeObject);
             }
         });
         return this;
@@ -308,7 +341,7 @@ public class Socket extends Emitter {
                 publishObject.set("data", dataObject);
 
                 publishObject.put("cid", counter.getAndIncrement());
-                ws.sendText(publishObject.toString());
+                send(publishObject);
             }
         });
 
@@ -328,7 +361,7 @@ public class Socket extends Emitter {
                 publishObject.set("data", dataObject);
 
                 publishObject.put("cid", counter.getAndIncrement());
-                ws.sendText(publishObject.toString());
+                send(publishObject);
             }
         });
 
@@ -344,7 +377,7 @@ public class Socket extends Emitter {
                         object.set("error", error);
                         object.set("data", data);
                         object.put("rid", cid);
-                        ws.sendText(object.toString());
+                        send(object);
                     }
                 });
             }
