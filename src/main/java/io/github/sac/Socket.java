@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.neovisionaries.ws.client.*;
-import io.github.sac.codec.CodecEngine;
+import io.github.sac.codec.SocketClusterCodec;
 
 import java.io.IOException;
 import java.util.*;
@@ -33,7 +33,7 @@ public class Socket extends Emitter {
     private List<Channel> channels;
     private WebSocketAdapter adapter;
     private Map<String, String> headers;
-    private CodecEngine codec;
+    private SocketClusterCodec codec;
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -85,7 +85,7 @@ public class Socket extends Emitter {
         this.listener = listener;
     }
 
-    public void setCodec(CodecEngine codec) {
+    public void setCodec(SocketClusterCodec codec) {
         this.codec = codec;
     }
 

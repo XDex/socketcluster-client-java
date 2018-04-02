@@ -2,7 +2,7 @@ package io.github.sac.codec;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-public class MinBinCodec implements CodecEngine {
+public class MinBinCodec implements SocketClusterCodec {
 
     @Override
     public byte[] encode(JsonNode data) {
