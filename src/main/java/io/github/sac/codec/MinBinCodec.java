@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 public class MinBinCodec implements SocketClusterCodec {
@@ -21,12 +22,12 @@ public class MinBinCodec implements SocketClusterCodec {
             }
 
             if (data.isObject()) {
-                ObjectNode dataObject = (ObjectNode) data;
+                ObjectNode encodeObject = (ObjectNode) data;
                 ObjectNode compressed = mapper.createObjectNode();
 
-                compressPublish(dataObject, compressed);
-                compressEmit(dataObject, compressed);
-                compressResponse(dataObject, compressed);
+                compressPublish(encodeObject, compressed);
+                compressEmit(encodeObject, compressed);
+                compressResponse(encodeObject, compressed);
 
                 return mapper.writeValueAsBytes(compressed);
             }
@@ -37,69 +38,140 @@ public class MinBinCodec implements SocketClusterCodec {
         return null;
     }
 
-    private void compressResponse(ObjectNode data, ObjectNode compressed) {
-        if (!data.has("rid") || data.get("rid").isNull()) {
+    private void compressResponse(ObjectNode object, ObjectNode compressed) {
+        if (!object.has("rid") || object.get("rid").isNull()) {
             return;
         }
 
         ArrayNode array = mapper.createArrayNode()
-                .add(data.get("rid"))
-                .add(data.get("error"))
-                .add(data.get("data"));
+                .add(object.get("rid"))
+                .add(object.get("error"))
+                .add(object.get("data"));
 
         compressed.set("r", array);
 
-        data.remove("rid");
-        data.remove("error");
-        data.remove("data");
+        object.remove("rid");
+        object.remove("error");
+        object.remove("data");
     }
 
-    private void compressPublish(ObjectNode data, ObjectNode compressed) {
-        if (!data.has("event") || !data.get("event").asText().equals("#publish")
-                || !data.has("data") || data.get("data").isNull()) {
+    private void compressPublish(ObjectNode object, ObjectNode compressed) {
+        if (!object.has("event") || !object.get("event").asText().equals("#publish")
+                || !object.has("data") || object.get("data").isNull()) {
             return;
         }
 
-        ObjectNode dataObject = (ObjectNode) data.get("data");
+        ObjectNode dataObject = (ObjectNode) object.get("data");
 
         ArrayNode array = mapper.createArrayNode();
         array.add(dataObject.get("channel"));
         array.add(dataObject.get("data"));
 
-        if (data.has("cid")) {
-            array.add(data.get("cid"));
-            data.remove("cid");
+        if (object.has("cid")) {
+            array.add(object.get("cid"));
+            object.remove("cid");
         }
 
         compressed.set("p", array);
 
-        data.remove("event");
-        data.remove("data");
+        object.remove("event");
+        object.remove("data");
     }
 
-    private void compressEmit(ObjectNode data, ObjectNode compressed) {
-        if (!data.has("event") || data.get("event").isNull()) {
+    private void compressEmit(ObjectNode object, ObjectNode compressed) {
+        if (!object.has("event") || object.get("event").isNull()) {
             return;
         }
 
         ArrayNode array = mapper.createArrayNode();
-        array.add(data.get("event"));
-        array.add(data.get("data"));
+        array.add(object.get("event"));
+        array.add(object.get("data"));
 
-        if (data.has("cid")) {
-            array.add(data.get("cid"));
-            data.remove("cid");
+        if (object.has("cid")) {
+            array.add(object.get("cid"));
+            object.remove("cid");
         }
 
         compressed.set("e", array);
 
-        data.remove("event");
-        data.remove("data");
+        object.remove("event");
+        object.remove("data");
     }
 
 
     @Override
     public JsonNode decode(byte[] data) {
+        try {
+            JsonNode decoded = mapper.readTree(data);
+
+            if (decoded.isValueNode()) {
+                return decoded;
+            }
+
+            if (decoded.isObject()) {
+                ObjectNode decodeObject = (ObjectNode) decoded;
+                decompressEmit(decodeObject);
+                decompressPublish(decodeObject);
+                decompressResponse(decodeObject);
+
+                return decodeObject;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        LOGGER.info("Unable to decode data");
         return null;
+    }
+
+    private void decompressResponse(ObjectNode object) {
+        if (!object.has("r") || object.get("r").isNull()) {
+            return;
+        }
+
+        ArrayNode array = (ArrayNode) object.get("r");
+
+        object.set("rid", array.get(0));
+        object.set("error", array.get(1));
+        object.set("data", array.get(2));
+
+        object.remove("r");
+    }
+
+    private void decompressPublish(ObjectNode object) {
+        if (!object.has("p") || object.get("p").isNull()) {
+            return;
+        }
+
+        ArrayNode array = (ArrayNode) object.get("p");
+
+        ObjectNode dataObject = mapper.createObjectNode();
+        dataObject.set("channel", array.get(0));
+        dataObject.set("data", array.get(1));
+
+        object.put("event", "#publish");
+        object.set("data", dataObject);
+
+        if (array.has(2)) {
+            object.set("cid", array.get(2));
+        }
+
+        object.remove("p");
+    }
+
+    private void decompressEmit(ObjectNode object) {
+        if (!object.has("e") || object.get("e").isNull()) {
+            return;
+        }
+
+        ArrayNode array = (ArrayNode) object.get("e");
+
+        object.set("event", array.get(0));
+        object.set("data", array.get(1));
+
+        if (array.has(2)) {
+            object.set("cid", array.get(2));
+        }
+
+        object.remove("e");
     }
 }
