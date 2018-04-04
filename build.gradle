@@ -4,10 +4,6 @@ buildscript {
     }
 }
 
-plugins {
-    id "com.jfrog.bintray" version "1.7"
-}
-
 allprojects {
     tasks.withType(JavaCompile) {
         sourceCompatibility = '1.7'
@@ -15,8 +11,8 @@ allprojects {
     }
 }
 
-group 'com.github.XDex'
-version '2.0.0'
+group = 'com.github.XDex'
+version = '2.0.0'
 
 allprojects {
     repositories {
@@ -24,7 +20,6 @@ allprojects {
     }
     apply plugin: 'java'
     apply plugin: 'maven'
-    apply plugin: 'maven-publish'
 }
 
 task wrapper(type: Wrapper) {
@@ -44,47 +39,6 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 jar {
     from {
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-    }
-}
-
-publishing {
-    publications {
-        MyPublication(MavenPublication) {
-            from components.java
-            groupId 'com.github.XDex'
-            artifactId 'SocketclusterClientJava'
-            version '2.0.0'
-
-            artifact sourceJar {
-                classifier "sources"
-            }
-
-            artifact javadocJar {
-                classifier "javadoc"
-            }
-        }
-    }
-}
-
-
-bintray{
-    user=System.getenv('BINTRAY_USER')
-    key=System.getenv('BINTRAY_API_KEY')
-//    configurations = ['archives']
-    publications = ['MyPublication']
-    pkg {
-        repo = 'Maven'
-        name = 'socketcluster-client'
-        licenses = ['Apache-2.0']
-        vcsUrl = 'https://github.com/sacOO7/socketcluster-client-java.git'
-        publicDownloadNumbers = true
-
-        version {
-            name = '2.0.0'
-            desc = 'Switched to Jackson and implemented sc-min-bin codec support'
-            vcsTag = '2.0.0'
-        }
-
     }
 }
 
