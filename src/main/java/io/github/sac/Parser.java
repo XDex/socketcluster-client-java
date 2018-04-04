@@ -1,8 +1,7 @@
 package io.github.sac;
 
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Created by sachin on 15/11/16.
@@ -19,23 +18,25 @@ public class Parser {
     }
 
 
-    public static ParseResult parse(Object dataobject, String event) throws JSONException {
-
-        if (dataobject instanceof JSONObject && ((JSONObject) dataobject).opt("isAuthenticated") != null) {
+    public static ParseResult parse(JsonNode dataobject, String event) {
+        if (dataobject.has("isAuthenticated")) {
             return ParseResult.ISAUTHENTICATED;
-        } else if (event != null) {
-            if (event.equals("#publish")) {
-                return ParseResult.PUBLISH;
-            } else if (event.equals("#removeAuthToken")) {
-                return ParseResult.REMOVETOKEN;
-            } else if (event.equals("#setAuthToken")) {
-                return ParseResult.SETTOKEN;
-            } else {
-                return ParseResult.EVENT;
-            }
-        } else {
-            return ParseResult.ACKRECEIVE;
         }
+
+        if (event != null) {
+            switch (event) {
+                case "#publish":
+                    return ParseResult.PUBLISH;
+                case "#removeAuthToken":
+                    return ParseResult.REMOVETOKEN;
+                case "#setAuthToken":
+                    return ParseResult.SETTOKEN;
+                default:
+                    return ParseResult.EVENT;
+            }
+        }
+
+        return ParseResult.ACKRECEIVE;
     }
 
 }

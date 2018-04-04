@@ -1,6 +1,14 @@
 Java and Android Socketcluster Client
 =====================================
 
+This SocketCluster Java/Android Client fork has the following differences from upstream:  
+- [Jackson](https://github.com/FasterXML/jackson) JSON parser is used, instead of  [JSON-java](https://github.com/stleary/JSON-java)
+- [SocketCluster Minimal binary (sc-codec-min-bin) codec](https://github.com/SocketCluster/sc-codec-min-bin) support
+- Underlying [nv-websocket-client](https://github.com/TakahikoKawasaki/nv-websocket-client) has been updated to the latest version
+- Breaking: callback params now have Jackson `JsonNode` types, instead of upstream's `Object`
+
+**Important Notes:** Due to using `jackson-databing` this library is significantly bigger in size than upstream (~2 Mb), so if binary codec support is not needed, consider using upstream instead. 
+
 Overview
 --------
 This client provides following functionality
@@ -9,6 +17,7 @@ This client provides following functionality
 - Automatic reconnection
 - Pub/sub
 - Authentication (JWT)
+- Binary codec support (`sc-codec-min-bin` included out-of-the-box)
 
 License
 -------
@@ -16,30 +25,18 @@ Apache License, Version 2.0
 
 Gradle
 ------
-For java 
 
 ```Gradle
+repositories {
+    jcenter()
+    maven { url "https://jitpack.io" }
+}
 dependencies {
-    compile 'io.github.sac:SocketclusterClientJava:1.7.4'
+    implementation 'com.github.XDex:socketcluster-client-java:2.0.0'
 }
 ```
-for sample java examples visit [Java Demo](https://github.com/sacOO7/socketcluster-client-testing/tree/master/src/main/java)
 
-For android 
-
-```Gradle
-compile ('io.github.sac:SocketclusterClientJava:1.7.4'){
-        exclude group :'org.json', module: 'json'
-}
-```
-for sample android demo visit [Android Demo](https://github.com/sacOO7/socketcluster-android-demo)
-
-
-[ ![Download](https://api.bintray.com/packages/sacoo7/Maven/socketcluster-client/images/download.svg) ](https://bintray.com/sacoo7/Maven/socketcluster-client/_latestVersion)
-
-<!---
-Download [latest jar dependency](https://github.com/sacOO7/socketcluster-client-java/blob/master/out/artifacts/SocketclusterClientJava_main_jar/SocketclusterClientJava_main.jar?raw=true)
--->
+[Download JAR](https://api.bintray.com/packages/sacoo7/Maven/socketcluster-client/images/download.svg)
 
 Description
 -----------
@@ -193,6 +190,20 @@ The object received can be String, Boolean, Long or JSONObject.
         });
         
 ```
+
+Codecs
+------
+
+Custom binary [SocketCluster codecs](https://github.com/SocketCluster/socketcluster#custom-codecs) are supported.  
+Support for [sc-codec-min-bin](https://github.com/SocketCluster/sc-codec-min-bin) is included out-of-the-box.  
+
+To enable a binary codec, just set it as follows on the SocketCluster `Socket`:
+
+```java
+socket.setCodec(new MinBinCodec());
+```
+
+Custom binary codecs must implement the `SocketClusterCodec` interface. 
 
 Implementing Pub-Sub via channels
 ---------------------------------

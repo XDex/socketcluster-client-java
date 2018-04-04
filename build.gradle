@@ -16,7 +16,7 @@ allprojects {
 }
 
 group 'io.github.sac'
-version '1.7.4'
+version '2.0.0'
 
 
 allprojects {
@@ -26,6 +26,10 @@ allprojects {
     apply plugin: 'java'
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.6'
 }
 
 task sourceJar(type: Jar) {
@@ -38,13 +42,19 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
+jar {
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 publishing {
     publications {
         MyPublication(MavenPublication) {
             from components.java
             groupId 'io.github.sac'
             artifactId 'SocketclusterClientJava'
-            version '1.7.4'
+            version '2.0.0'
 
             artifact sourceJar {
                 classifier "sources"
@@ -71,15 +81,15 @@ bintray{
         publicDownloadNumbers = true
 
         version {
-            name = '1.7.4'
-            desc = 'Added method to Connect asynchronously with server'
-            vcsTag = '1.7.4'
+            name = '2.0.0'
+            desc = 'Switched to Jackson and implemented sc-min-bin codec support'
+            vcsTag = '2.0.0'
         }
 
     }
 }
 
 dependencies {
-    compile 'com.neovisionaries:nv-websocket-client:1.30'
-    compile group: 'org.json', name: 'json', version: '20090211'
+    implementation 'com.neovisionaries:nv-websocket-client:2.3'
+    implementation 'org.msgpack:jackson-dataformat-msgpack:0.8.15'
 }
