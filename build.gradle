@@ -90,6 +90,6 @@ bintray{
 }
 
 dependencies {
-    implementation 'com.neovisionaries:nv-websocket-client:2.3'
-    implementation 'org.msgpack:jackson-dataformat-msgpack:0.8.15'
+    compile 'com.neovisionaries:nv-websocket-client:2.3'
+    compile 'org.msgpack:jackson-dataformat-msgpack:0.8.15'
 }

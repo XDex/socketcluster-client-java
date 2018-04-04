@@ -7,7 +7,7 @@ This SocketCluster Java/Android Client fork has the following differences from u
 - Underlying [nv-websocket-client](https://github.com/TakahikoKawasaki/nv-websocket-client) has been updated to the latest version
 - Breaking: callback params now have Jackson `JsonNode` types, instead of upstream's `Object`
 
-**Important Notes:** Due to using `jackson-databing` this library is significantly bigger in size than upstream (~2 Mb), so if binary codec support is not needed, consider using upstream instead. 
+**Important Notes:** Due to using `jackson-databing` this library is significantly bigger in size than upstream (~1.8 Mb), so if binary codec support is not needed, consider using upstream instead. 
 
 Overview
 --------
@@ -36,7 +36,7 @@ dependencies {
 }
 ```
 
-[Download JAR](https://api.bintray.com/packages/sacoo7/Maven/socketcluster-client/images/download.svg)
+[Download](https://github.com/XDex/socketcluster-client-java/releases)
 
 Description
 -----------
