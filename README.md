@@ -3,9 +3,9 @@ Java and Android Socketcluster Client
 
 This SocketCluster Java/Android Client fork has the following differences from upstream:  
 - [Jackson](https://github.com/FasterXML/jackson) JSON parser is used, instead of  [JSON-java](https://github.com/stleary/JSON-java)
-- [SocketCluster Minimal binary (sc-codec-min-bin) codec](https://github.com/SocketCluster/sc-codec-min-bin) support. See [Codecs](#codecs) section
+- [SocketCluster Minimal binary (sc-codec-min-bin) codec](https://github.com/SocketCluster/sc-codec-min-bin) support. See [Codecs](#codecs) section on usage example
 - Underlying [nv-websocket-client](https://github.com/TakahikoKawasaki/nv-websocket-client) has been updated to the latest version
-- Breaking: callback params now have Jackson `JsonNode` types, instead of upstream's `Object`
+- **Breaking**: callback params now have Jackson `JsonNode` types, instead of upstream's `Object`
 
 **Important Note:** Due to using `jackson-databind` this library is significantly bigger in size than upstream (~1.8 Mb), so if binary codec support is not needed, consider using upstream instead. 
 
