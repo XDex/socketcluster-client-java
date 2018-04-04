@@ -27,13 +27,17 @@ Gradle
 ------
 
 ```Gradle
-repositories {
-    jcenter()
-    maven { url "https://jitpack.io" }
+allprojects {
+    repositories {
+        jcenter()
+        maven { url "https://jitpack.io" }
+    }
 }
 
+...
+
 dependencies {
-    implementation 'com.github.XDex:SocketclusterClientJava:2.0.0'
+    implementation 'com.github.XDex:socketcluster-client-java:2.0.1'
 }
 ```
 
