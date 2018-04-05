@@ -63,15 +63,15 @@ Implemented using `BasicListener` interface
 ```java
         socket.setListener(new BasicListener() {
         
-            public void onConnected(Socket socket,Map<String, List<String>> headers) {
+            public void onConnected(Socket socket, Map<String, List<String>> headers) {
                 System.out.println("Connected to endpoint");
             }
 
-            public void onDisconnected(Socket socket,WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) {
+            public void onDisconnected(Socket socket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) {
                 System.out.println("Disconnected from end-point");
             }
 
-            public void onConnectError(Socket socket,WebSocketException exception) {
+            public void onConnectError(Socket socket, WebSocketException exception) {
                 System.out.println("Got connect error "+ exception);
             }
 
@@ -79,7 +79,7 @@ Implemented using `BasicListener` interface
                 System.out.println("Token is "+ token);
             }
 
-            public void onAuthentication(Socket socket,Boolean status) {
+            public void onAuthentication(Socket socket, Boolean status) {
                 if (status) {
                     System.out.println("socket is authenticated");
                 } else {
@@ -95,35 +95,35 @@ Implemented using `BasicListener` interface
 - For connecting to server:
 
 ```java
-    //This will send websocket handshake request to socketcluster-server
+    // This will send websocket handshake request to socketcluster-server
     socket.connect();
 ```
 
 - For connecting asynchronously to server:
 
 ```java
-    //This will send websocket handshake request to socketcluster-server
+    // This will send websocket handshake request to socketcluster-server
     socket.connectAsync();
 ```
 
 
-- By default reconnection to server is not enabled , to enable it :
+- By default reconnection to server is not enabled, to enable it:
 
 ```java
-    //This will set automatic-reconnection to server with delay of 2 seconds and repeating it for 30 times
+    // This will set automatic reconnection to server with delay of 2 seconds and repeating it for 30 times
     socket.setReconnection(new ReconnectStrategy().setDelay(2000).setMaxAttempts(30));
     socket.connect();
 ```
 
 - To disable reconnection :
 
-```
+```java
    socket.setReconnection(null); 
 ```
 
-- By default logging of messages is enabled ,to disable :
+- By default logging of messages is enabled, to disable:
 
-```
+```java
    socket.disableLogging();
 ```
 
@@ -131,21 +131,20 @@ Emitting and listening to events
 --------------------------------
 #### Event emitter
 
-- eventname is name of event and message can be String, boolean, Long or JSON-object
+- eventname is name of event and message can be String, boolean, Long or JsonNode
 
 ```java
-    socket.emit(eventname,message);
+    socket.emit(eventname, message);
     
-    //socket.emit("chat","Hi");
+    // socket.emit("chat", "Hi");
 ```
 
 - To send event with acknowledgement
 
 ```java
     socket.emit(eventname, message, new Ack() {
-                public void call(String eventName,Object error, Object data) {
-                    //If error and data is String
-                    System.out.println("Got message for :"+eventName+" error is :"+error+" data is :"+data);
+                public void call(String eventName, JsonNode error, JsonNode data) {
+                    System.out.println("Got message for :" + eventName + " error is: " + error + " data is:" + data);
                 }
         });
 ```
@@ -154,14 +153,12 @@ Emitting and listening to events
 
 - For listening to events :
 
-The object received can be String, Boolean, Long or JSONObject.
+The object received can be String, Boolean, Long or JsonNode.
 
 ```java
     socket.on(eventname, new Emitter.Listener() {
-                public void call(String eventName,Object object) {
-                    
-                    // Cast object to its proper datatype
-                    System.out.println("Got message for :"+eventName+" data is :"+data);
+                public void call(String eventName, JsonNode data) {
+                    System.out.println("Got message for: " + eventName + " data is: " + data);
                 }
         }); 
 ```
@@ -170,27 +167,17 @@ The object received can be String, Boolean, Long or JSONObject.
 
 ```java
     socket.on(eventname, new Emitter.AckListener() {
-            public void call(String eventName,Object object, Ack ack) {
-                
-                // Cast object to its proper datatype                     
-                System.out.println("Got message :: " + object);
-                /...
-                    Some logic goes here
-                .../
+            public void call(String eventName, JsonNode object, Ack ack) {                     
+                System.out.println("Got message: " + object);
+                // ...
                 if (error){
-                
-                ack.call(eventName,error,null);
-                
-                }else{
-                
-                //Data can be of any data type
-                
-                ack.call(eventName,null,data);
+                    ack.call(eventName, error, null);
+                } else{
+                    ack.call(eventName, null, data);
                 }
                 
                 //Both error and data can be sent to server
-                
-                ack.call(eventName,error,data);
+                ack.call(eventName, error, data);
             }
         });
         
@@ -219,22 +206,22 @@ Implementing Pub-Sub via channels
 
 ```java
     Socket.Channel channel = socket.createChannel(channelName);
-    //Socket.Channel channel = socket.createChannel("yolo"); 
+    // Socket.Channel channel = socket.createChannel("yolo"); 
     
     
     /**
      * without acknowledgement
      */
-     channel.subscribe();
+    channel.subscribe();
      
     /**
      * with acknowledgement
      */
      
     channel.subscribe(new Ack() {
-                public void call(String channelName, Object error, Object data) {
+                public void call(String channelName, JsonNode error, JsonNode data) {
                     if (error == null) {
-                        System.out.println("Subscribed to channel "+channelName+" successfully");
+                        System.out.println("Subscribed to channel " + channelName + " successfully");
                     }
                 }
         });
@@ -243,15 +230,14 @@ Implementing Pub-Sub via channels
 - For getting list of created channels :
  
 ```java
-    List <Socket.Channel> channels=socket.getChannels();
+    List <Socket.Channel> channels = socket.getChannels();
 ``` 
 
 - To get channel by name :
 
 ```java
-        Socket.Channel channel=socket.getChannelByName("yolo");
+        Socket.Channel channel = socket.getChannelByName("yolo");
         //Returns null if channel of given name is not present
-        
 ```
 
 
@@ -272,9 +258,9 @@ Implementing Pub-Sub via channels
      * with acknowledgement
      */
        channel.publish(message, new Ack() {
-                public void call(String channelName,Object error, Object data) {
+                public void call(String channelName, JsonNode error, JsonNode data) {
                     if (error == null) {
-                        System.out.println("Published message to channel "+channelName+" successfully");
+                        System.out.println("Published message to channel " + channelName + " successfully");
                     }
                 }
         });
@@ -287,16 +273,14 @@ Implementing Pub-Sub via channels
 
 ```java
     channel.onMessage(new Emitter.Listener() {
-             public void call(String channelName , Object object) {
-                
-                 System.out.println("Got message for channel "+channelName+" data is "+data);
-                 
+             public void call(String channelName , JsonNode object) {
+                 System.out.println("Got message for channel " + channelName + " data is " + data);
              }
          });
 ``` 
  
 <!--###### Pub-sub without creating channel-->
-#### Un-subscribing to channel
+#### Unsubscribing a channel
 
 ```java
 
@@ -304,14 +288,14 @@ Implementing Pub-Sub via channels
      * without acknowledgement
      */
      
-     channel.unsubscribe();
+    channel.unsubscribe();
      
     /**
      * with acknowledgement
      */
      
     channel.unsubscribe(new Ack() {
-                public void call(String channelName, Object error, Object data) {
+                public void call(String channelName, JsonNode error, JsonNode data) {
                     if (error == null) {
                         System.out.println("channel unsubscribed successfully");
                     }
@@ -328,7 +312,7 @@ To get instance of `WebSocketFactory` class :
 
 ```java
    
-    WebSocketFactory factory=socket.getFactorySettings();
+    WebSocketFactory factory = socket.getFactorySettings();
     
 ```
  
@@ -384,4 +368,3 @@ Basic Authentication.
 settings.setCredentials(id, password);
 ``` 
 #### Star the repo. if you love the client :).
- 
