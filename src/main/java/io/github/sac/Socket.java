@@ -242,25 +242,33 @@ public class Socket extends Emitter {
 
     }
 
-    public Socket emit(final String event, final Object object) {
+    private void setDataField(ObjectNode object, Object data) {
+        if (data instanceof JsonNode) {
+            object.set("data", (JsonNode) data);
+        } else {
+            object.putPOJO("data", data);
+        }
+    }
+
+    public Socket emit(final String event, final Object data) {
         EventThread.exec(new Runnable() {
             public void run() {
                 ObjectNode eventObject = mapper.createObjectNode();
                 eventObject.put("event", event);
-                eventObject.putPOJO("data", object);
+                setDataField(eventObject, data);
                 send(eventObject);
             }
         });
         return this;
     }
 
-    public Socket emit(final String event, final Object object, final Ack ack) {
+    public Socket emit(final String event, final Object data, final Ack ack) {
         EventThread.exec(new Runnable() {
             public void run() {
                 ObjectNode eventObject = mapper.createObjectNode();
                 acks.put(counter.longValue(), getAckObject(event, ack));
                 eventObject.put("event", event);
-                eventObject.putPOJO("data", object);
+                setDataField(eventObject, data);
                 eventObject.put("cid", counter.getAndIncrement());
                 send(eventObject);
             }
@@ -337,7 +345,7 @@ public class Socket extends Emitter {
 
                 ObjectNode dataObject = mapper.createObjectNode();
                 dataObject.put("channel", channel);
-                dataObject.putPOJO("data", data);
+                setDataField(dataObject, data);
                 publishObject.set("data", dataObject);
 
                 publishObject.put("cid", counter.getAndIncrement());
@@ -357,7 +365,7 @@ public class Socket extends Emitter {
                 ObjectNode dataObject = mapper.createObjectNode();
                 acks.put(counter.longValue(), getAckObject(channel, ack));
                 dataObject.put("channel", channel);
-                dataObject.putPOJO("data", data);
+                setDataField(dataObject, data);
                 publishObject.set("data", dataObject);
 
                 publishObject.put("cid", counter.getAndIncrement());

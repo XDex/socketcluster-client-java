@@ -37,7 +37,7 @@ allprojects {
 ...
 
 dependencies {
-    implementation 'com.github.XDex:socketcluster-client-java:2.0.1'
+    implementation 'com.github.XDex:socketcluster-client-java:2.0.2'
 }
 ```
 
