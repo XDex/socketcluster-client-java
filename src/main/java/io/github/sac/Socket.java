@@ -35,6 +35,7 @@ public class Socket extends Emitter {
     private Map<String, String> headers;
     private SocketClusterCodec codec;
     private int connectionTimeout = 5000;
+    private boolean perMessageDeflate;
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -92,6 +93,10 @@ public class Socket extends Emitter {
 
     public void setConnectionTimeout(int timeout) {
         connectionTimeout = timeout;
+    }
+
+    public void setPerMessageDeflateCompression(boolean enable) {
+        perMessageDeflate = enable;
     }
 
     /**
@@ -423,7 +428,12 @@ public class Socket extends Emitter {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        ws.addExtension("permessage-deflate; client_max_window_bits");
+
+        if (perMessageDeflate) {
+            ws.addExtension(WebSocketExtension.PERMESSAGE_DEFLATE);
+        }
+        ws.addExtension("client_max_window_bits");
+
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             ws.addHeader(entry.getKey(), entry.getValue());
         }
