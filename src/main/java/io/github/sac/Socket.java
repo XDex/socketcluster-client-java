@@ -35,7 +35,7 @@ public class Socket extends Emitter {
     private Map<String, String> headers;
     private SocketClusterCodec codec;
     private int connectionTimeout = 5000;
-    private boolean perMessageDeflate;
+    private boolean perMessageDeflate = true;
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -91,12 +91,19 @@ public class Socket extends Emitter {
         this.codec = codec;
     }
 
+    /**
+     * Set Websocket connection timeout - set to 5000 by default
+     * @param timeout - connection timeout in Milliseconds
+     */
     public void setConnectionTimeout(int timeout) {
         connectionTimeout = timeout;
     }
 
-    public void setPerMessageDeflateCompression(boolean enable) {
-        perMessageDeflate = enable;
+    /**
+     * Disable Websocket perMessageDeflate compression, which is enabled by default
+     */
+    public void disablePerMessageDeflateCompression() {
+        perMessageDeflate = false;
     }
 
     /**
