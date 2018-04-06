@@ -34,12 +34,13 @@ public class Socket extends Emitter {
     private WebSocketAdapter adapter;
     private Map<String, String> headers;
     private SocketClusterCodec codec;
+    private int connectionTimeout = 5000;
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public Socket(String URL) {
         this.URL = URL;
-        factory = new WebSocketFactory().setConnectionTimeout(5000);
+        factory = new WebSocketFactory();
         counter = new AtomicInteger(1);
         acks = new HashMap<>();
         channels = new ArrayList<>();
@@ -87,6 +88,10 @@ public class Socket extends Emitter {
 
     public void setCodec(SocketClusterCodec codec) {
         this.codec = codec;
+    }
+
+    public void setConnectionTimeout(int timeout) {
+        connectionTimeout = timeout;
     }
 
     /**
@@ -411,9 +416,9 @@ public class Socket extends Emitter {
         return headers;
     }
 
-    public void connect() {
-
+    private void setupConnection() {
         try {
+            factory.setConnectionTimeout(connectionTimeout);
             ws = factory.createSocket(URL);
         } catch (IOException e) {
             e.printStackTrace();
@@ -424,7 +429,10 @@ public class Socket extends Emitter {
         }
 
         ws.addListener(adapter);
+    }
 
+    public void connect() {
+        setupConnection();
         try {
             ws.connect();
         } catch (OpeningHandshakeException e) {
@@ -468,17 +476,7 @@ public class Socket extends Emitter {
     }
 
     public void connectAsync() {
-        try {
-            ws = factory.createSocket(URL);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        ws.addExtension("permessage-deflate; client_max_window_bits");
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            ws.addHeader(entry.getKey(), entry.getValue());
-        }
-
-        ws.addListener(adapter);
+        setupConnection();
         ws.connectAsynchronously();
     }
 
