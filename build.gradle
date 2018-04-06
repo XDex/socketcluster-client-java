@@ -12,7 +12,7 @@ allprojects {
 }
 
 group = 'com.github.XDex'
-version = '2.0.2'
+version = '2.0.3'
 
 allprojects {
     repositories {
